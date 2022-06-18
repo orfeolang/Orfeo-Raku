@@ -9,11 +9,14 @@ sub assert_float-has-decimal-digits($float, $pos) {
     }
 }
 
-# Warning: Only works for unsigned numbers.
 sub assert_number-does-not-have-leading-zeros($number, $pos) {
     if $number.chars > 1 &&
-       $number.starts-with('0') &&
-       substr($number, 1, 1) ~~ /<digit>/
+        (
+            # Note: These checks could most likely be more succinct.
+            ($number.starts-with('0')  && substr($number, 1, 1) ~~ /<digit>/) ||
+            ($number.starts-with('-0') && substr($number, 2, 1) ~~ /<digit>/) ||
+            ($number.starts-with('+0') && substr($number, 2, 1) ~~ /<digit>/)
+        )
     {
         throw("A number cannot have leading zeros.", $pos, $number);
     }
@@ -28,7 +31,10 @@ sub validate_integer($integer, $pos) {
     assert_number-does-not-have-leading-zeros($integer, $pos);
 }
 
-my $program = ' 0 1 12 .12 12.12 0.12 01 01.1 1. ';
+my $program =
+    ' 0 +0 -0 1 +1 -1 12 +12 -12 .12 +.12 -.12 0.12 +0.12 -0.12 ' ~ # Success.
+    ' 12. +12. -12. ' ~ # Float without decimal digits error.
+    ' 00 +01 -01 000 +001 -001 00.1 +00.1 -00.1 '; # Leading zero error.
 
 grammar Orfeo {
     token TOP { [ <.ws> <number> <.ws> ]* }
@@ -37,14 +43,15 @@ grammar Orfeo {
         | <integer> { validate_integer($<integer>, self.pos) }
     }
     token float {
-            # .d+ | d+.d+
-        | <integer-digits>? \. <decimal-digits>
-            # d+.
-        | <integer-digits> \.
+            # (-|+)?.d+ | (-|+)?d+.d+
+        | <sign>? <integer-digits>? \. <decimal-digits>
+            # (-|+)?d+.
+        | <sign>? <integer-digits> \.
     }
-    token integer        { <digit>+ }
+    token integer        { <sign>? <digit>+ }
     token integer-digits { <digit>+ }
     token decimal-digits { <digit>+ }
+    token sign { '+' | '-' }
 }
 
 say Orfeo.parse($program);
