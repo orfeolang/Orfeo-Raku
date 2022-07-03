@@ -31,10 +31,11 @@ sub validate_integer($integer, $pos) {
     assert_number-does-not-have-leading-zeros($integer, $pos);
 }
 
-my $program =
-    ' 0 +0 -0 1 +1 -1 12 +12 -12 .12 +.12 -.12 0.12 +0.12 -0.12 ' ~ # Success.
-    ' 12. +12. -12. ' ~ # Float without decimal digits error.
-    ' 00 +01 -01 000 +001 -001 00.1 +00.1 -00.1 '; # Leading zero error.
+my $program = q:to/END/;
+    0 +0 -0 1 +1 -1 12 +12 -12 .12 +.12 -.12 0.12 +0.12 -0.12
+    12. +12. -12.
+    00 +01 -01 000 +001 -001 00.1 +00.1 -00.1
+    END
 
 grammar Orfeo {
     token TOP { [ <.ws> <number> <.ws> ]* }
