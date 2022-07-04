@@ -1,15 +1,20 @@
-sub throw($error, $pos, $value) {
-    note $error ~ " pos: " ~ $pos ~ ", value: " ~ $value;
+sub throw($error, $self, $value) {
+    my $parsed-so-far = $self.target.substr(0, $self.pos + 1);
+    my @lines = $parsed-so-far.lines;
+    my $lineNum = @lines.elems;
+    my $linePos = @lines[*-1].chars;
+    note "Error at " ~ $lineNum ~ ":" ~ $linePos ~ " => " ~ $value;
+    note $error;
     # die;
 }
 
-sub assert_float-has-decimal-digits($float, $pos) {
+sub assert_float-has-decimal-digits($float, $self) {
     if $float.ends-with('.') {
-        throw("A float must have digits after the decimal point.", $pos, $float);
+        throw("A float must have digits after the decimal point.", $self, $float);
     }
 }
 
-sub assert_number-does-not-have-leading-zeros($number, $pos) {
+sub assert_number-does-not-have-leading-zeros($number, $self) {
     if $number.chars > 1 &&
         (
             # Note: These checks could most likely be more succinct.
@@ -18,17 +23,17 @@ sub assert_number-does-not-have-leading-zeros($number, $pos) {
             ($number.starts-with('+0') && substr($number, 2, 1) ~~ /<digit>/)
         )
     {
-        throw("A number cannot have leading zeros.", $pos, $number);
+        throw("A number cannot have leading zeros.", $self, $number);
     }
 }
 
-sub validate_float($float, $pos) {
-    assert_float-has-decimal-digits($float, $pos);
-    assert_number-does-not-have-leading-zeros($float, $pos);
+sub validate_float($float, $self) {
+    assert_float-has-decimal-digits($float, $self);
+    assert_number-does-not-have-leading-zeros($float, $self);
 }
 
-sub validate_integer($integer, $pos) {
-    assert_number-does-not-have-leading-zeros($integer, $pos);
+sub validate_integer($integer, $self) {
+    assert_number-does-not-have-leading-zeros($integer, $self);
 }
 
 my $program = q:to/END/;
@@ -40,8 +45,8 @@ my $program = q:to/END/;
 grammar Orfeo {
     token TOP { [ <.ws> <number> <.ws> ]* }
     token number {
-        | <float>   { validate_float($<float>, self.pos) }
-        | <integer> { validate_integer($<integer>, self.pos) }
+        | <float>   { validate_float($<float>, self) }
+        | <integer> { validate_integer($<integer>, self) }
     }
     token float {
             # (-|+)?.d+ | (-|+)?d+.d+
