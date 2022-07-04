@@ -36,14 +36,21 @@ sub validate_integer($integer, $self) {
     assert_number-does-not-have-leading-zeros($integer, $self);
 }
 
+#`[
+    my $program = q:to/END/;
+        0 +0 -0 1 +1 -1 12 +12 -12 .12 +.12 -.12 0.12 +0.12 -0.12
+        12. +12. -12.
+        00 +01 -01 000 +001 -001 00.1 +00.1 -00.1
+        END
+]
+
 my $program = q:to/END/;
-    0 +0 -0 1 +1 -1 12 +12 -12 .12 +.12 -.12 0.12 +0.12 -0.12
-    12. +12. -12.
-    00 +01 -01 000 +001 -001 00.1 +00.1 -00.1
+    (1 (2 3) (4 (5 6)))
     END
 
 grammar Orfeo {
-    token TOP { [ <.ws> <number> <.ws> ]* }
+    token TOP { <expression> }
+    rule expression { '(' ~ ')' [<number> | <expression>]* }
     token number {
         | <float>   { validate_float($<float>, self) }
         | <integer> { validate_integer($<integer>, self) }
