@@ -2,10 +2,11 @@
 
 my $test-extension = 'orfeotest';
 my @stack = 'Euridice/t'.IO;
+my $test-header-prefix = '-' x 70;
 
 sub MAIN() {
     my @test-files = get-all-test-files;
-    .Str.say for @test-files;
+    say count-tests(@test-files);
 }
 
 sub get-all-test-files() {
@@ -16,4 +17,14 @@ sub get-all-test-files() {
         }
     }
     return @test-files;
+}
+
+sub count-tests(@test-files) {
+    my $count = 0;
+    for @test-files -> $test-file {
+        for $test-file.lines -> $line {
+            $count++ if $line eq $test-header-prefix;
+        }
+    }
+    return $count;
 }
